@@ -1,0 +1,83 @@
+plugins {
+    id "com.github.spotbugs" version "1.6.2"
+    id "java-library"
+}
+
+ext.javaCompiler = "1.10"
+ext.doclint = false
+ext.extraCompilerArgs = [
+    "--add-modules", "java.xml.ws.annotation",
+    "--add-opens", "jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",
+    "--add-opens", "jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED",
+    "--add-opens", "jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED",
+    "--add-opens", "jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED",
+    "--add-opens", "jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED",
+    "--add-opens", "jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED",
+    "--add-opens", "jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED",
+    "--add-opens", "jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
+    "--add-opens", "jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
+]
+
+ext.versionFindSecBugs = "1.8.0"
+ext.versionJcip = "1.0"
+ext.versionJsr305 = "3.0.2"
+ext.versionLombok = "1.18.2"
+ext.versionSpotBugs = "3.1.6"
+
+dependencies {
+    // Lombok
+    if (versionLombok != "edge") {
+        annotationProcessor group: 'org.projectlombok', name: 'lombok', version: "${versionLombok}"
+        compileOnly group: 'org.projectlombok', name: 'lombok', version: "${versionLombok}"
+        testAnnotationProcessor group: 'org.projectlombok', name: 'lombok', version: "${versionLombok}"
+        testCompileOnly group: 'org.projectlombok', name: 'lombok', version: "${versionLombok}"
+    } else {
+        annotationProcessor files("libs/lombok-edge.jar")
+        compileOnly files("libs/lombok-edge.jar")
+        testAnnotationProcessor files("libs/lombok-edge.jar")
+        testCompileOnly files("libs/lombok-edge.jar")
+    }
+
+    // SpotBugs + Find Security Bugs
+    compileOnly group: 'com.h3xstream.findsecbugs', name: 'findsecbugs-plugin', version: "${versionFindSecBugs}"
+    compileOnly group: 'net.jcip', name: 'jcip-annotations', version: "${versionJcip}"
+    compileOnly group: 'com.github.spotbugs', name: 'spotbugs-annotations', version: "${versionSpotBugs}"
+    compileOnly group: 'com.google.code.findbugs', name: 'jsr305', version: "${versionJsr305}"
+    testCompileOnly group: 'com.h3xstream.findsecbugs', name: 'findsecbugs-plugin', version: "${versionFindSecBugs}"
+    testCompileOnly group: 'net.jcip', name: 'jcip-annotations', version: "${versionJcip}"
+    testCompileOnly group: 'com.github.spotbugs', name: 'spotbugs-annotations', version: "${versionSpotBugs}"
+    testCompileOnly group: 'com.google.code.findbugs', name: 'jsr305', version: "${versionJsr305}"
+}
+
+println "Using Java " + org.gradle.api.JavaVersion.current() + "."
+
+repositories {
+    flatDir {
+        dirs 'libs'
+    }
+    mavenLocal()
+    jcenter()
+    mavenCentral()
+}
+
+tasks.withType(JavaCompile) {
+    sourceCompatibility = javaCompiler
+    targetCompatibility = javaCompiler
+    options.encoding = 'UTF-8'
+    options.debug = true
+    options.fork = true
+    options.compilerArgs << "-parameters" << "-Xlint:all,-processing"
+    if (doclint) options.compilerArgs << "-Xdoclint:all"
+    extraCompilerArgs.each { e -> options.compilerArgs << e }
+}
+
+spotbugs {
+    toolVersion = "${versionSpotBugs}"
+}
+
+tasks.withType(com.github.spotbugs.SpotBugsTask) {
+    reports {
+        xml.enabled = false
+        html.enabled = true
+    }
+}

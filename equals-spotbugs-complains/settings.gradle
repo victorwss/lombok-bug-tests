@@ -1,0 +1,2 @@
+enableFeaturePreview('STABLE_PUBLISHING')
+rootProject.name = 'Test-lombok-bug-equals-spotbugs-complains'
